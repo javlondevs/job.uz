@@ -1,0 +1,143 @@
+// JobUz - Prisma ma'lumotlar bazasi sxemasi
+// PostgreSQL bilan ishlaydi
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Foydalanuvchi roli: ish qidiruvchi yoki ish beruvchi
+enum Role {
+  JOB_SEEKER
+  EMPLOYER
+}
+
+// Ish turi
+enum JobType {
+  FULL_TIME   // To'liq stavka
+  PART_TIME   // Yarim stavka
+  REMOTE      // Masofaviy
+  INTERNSHIP  // Amaliyot
+  CONTRACT    // Shartnoma asosida
+}
+
+// Tajriba darajasi
+enum ExperienceLevel {
+  NO_EXPERIENCE // Tajribasiz
+  BEGINNER      // 1-2 yil
+  MID           // 3-5 yil
+  SENIOR        // 5+ yil
+}
+
+// Vakansiya holati
+enum JobStatus {
+  OPEN
+  CLOSED
+}
+
+// Ariza holati
+enum ApplicationStatus {
+  PENDING  // Ko'rilmagan
+  REVIEWED // Ko'rilgan
+  ACCEPTED // Qabul qilingan
+  REJECTED // Rad etilgan
+}
+
+model User {
+  id               String   @id @default(cuid())
+  name             String
+  email            String   @unique
+  passwordHash     String?  // Telegram orqali kirganda parol bo'lmasligi mumkin
+  role             Role     @default(JOB_SEEKER)
+  phone            String?
+  telegramId       String?  @unique
+  telegramUsername String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  company       Company?
+  cvs           CV[]
+  applications  Application[]
+  savedFilters  SavedFilter[]
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  logoUrl     String?
+  description String?
+  sector      String?  // Soha: IT, moliya, ta'lim...
+  location    String?
+  website     String?
+  ownerId     String   @unique
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  jobs        Job[]
+  createdAt   DateTime @default(now())
+}
+
+model Job {
+  id          String          @id @default(cuid())
+  title       String
+  description String
+  salaryMin   Int?            // oylik maosh (so'm yoki USD - frontend hal qiladi)
+  salaryMax   Int?
+  type        JobType
+  experience  ExperienceLevel @default(NO_EXPERIENCE)
+  location    String?         // viloyat/shahar
+  isRemote    Boolean         @default(false)
+  status      JobStatus       @default(OPEN)
+  companyId   String
+  company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  telegramMessageId String?   // kanalga post qilingan xabar ID si (o'chirish uchun)
+  applications Application[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([status, createdAt])
+  @@index([location])
+  @@index([type])
+}
+
+model CV {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String   @default("Mening CV im")
+  personalInfo Json     // ism, telefon, email, manzil, about
+  experience   Json     // ish tajribasi massivi
+  education    Json     // ta'lim massivi
+  skills       Json     // ko'nikmalar massivi
+  languages    Json     // tillar massivi
+  template     String   @default("modern") // modern | classic | minimal
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  applications Application[]
+}
+
+model Application {
+  id          String            @id @default(cuid())
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId       String
+  cv          CV?               @relation(fields: [cvId], references: [id], onDelete: SetNull)
+  cvId        String?
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  coverLetter String?
+  status      ApplicationStatus @default(PENDING)
+  createdAt   DateTime          @default(now())
+
+  @@unique([jobId, userId]) // bir foydalanuvchi bir vakansiyaga faqat bir marta ariza qoldiradi
+}
+
+model SavedFilter {
+  id             String  @id @default(cuid())
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  name           String  @default("Filtrim")
+  filters        Json    // qidiruv filtrlari (JSON)
+  telegramNotify Boolean @default(true)
+}

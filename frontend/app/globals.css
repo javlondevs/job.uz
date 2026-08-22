@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Asosiy sozlamalar */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-slate-50 text-slate-800 antialiased;
+}
+
+/* Sarlavha shrifti */
+h1, h2, h3, h4 {
+  @apply font-display;
+}
+
+/* Umumiy input uslubi */
+.input {
+  @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20;
+}
+.label {
+  @apply mb-1.5 block text-sm font-medium text-slate-700;
+}
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+}
+.btn-outline {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:text-brand-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+}
+.card {
+  @apply rounded-2xl border border-slate-100 bg-white shadow-card;
+}
+
+/* Skrollbar (chiroyli) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* CV preview uchun A4 o'lchami */
+.a4-preview {
+  width: min(100%, 794px);
+  aspect-ratio: 210 / 297;
+}
