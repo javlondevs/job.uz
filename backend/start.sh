@@ -8,5 +8,8 @@ for i in 1 2 3 4 5; do
   sleep 10
 done
 
+echo "Fixing roles..."
+node scripts/bootstrap-roles.js || true
+
 echo "Starting server..."
 node src/server.js
