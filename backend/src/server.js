@@ -47,6 +47,7 @@ app.use("/api/cv", cvRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/telegram", telegramRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/debug", require("./routes/debug.routes")); // VAQTINCHALIK
 
 // Salomatlik tekshiruvi (Render uchun)
 app.get("/health", (req, res) => res.json({ ok: true, service: "jobuz-api" }));
