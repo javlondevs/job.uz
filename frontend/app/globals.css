@@ -10,6 +10,9 @@ html {
 body {
   @apply bg-slate-50 text-slate-800 antialiased;
 }
+.dark body {
+  @apply bg-slate-950 text-slate-200;
+}
 
 /* Sarlavha shrifti */
 h1, h2, h3, h4 {
@@ -18,19 +21,33 @@ h1, h2, h3, h4 {
 
 /* Umumiy input uslubi */
 .input {
-  @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20;
+  @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-gold-500 dark:focus:ring-gold-500/20;
 }
 .label {
-  @apply mb-1.5 block text-sm font-medium text-slate-700;
+  @apply mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300;
 }
 .btn-primary {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 dark:bg-gold-500 dark:text-navy-950 dark:hover:bg-gold-400;
 }
 .btn-outline {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:text-brand-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:text-brand-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 dark:border-slate-700 dark:bg-transparent dark:text-slate-200 dark:hover:border-gold-500/60 dark:hover:text-gold-400;
+}
+.btn-navy {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-navy-950 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-navy-800 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 dark:bg-gold-500 dark:text-navy-950 dark:hover:bg-gold-400;
+}
+.btn-gold {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gold-500 px-6 py-3 text-sm font-bold text-navy-950 shadow-md shadow-gold-500/25 transition hover:bg-gold-400 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
 }
 .card {
-  @apply rounded-2xl border border-slate-100 bg-white shadow-card;
+  @apply rounded-2xl border border-slate-100 bg-white shadow-card dark:border-slate-800 dark:bg-slate-900 dark:shadow-none dark:ring-1 dark:ring-slate-800;
+}
+
+/* Matn tanlash rangi */
+::selection {
+  @apply bg-gold-200 text-navy-950;
+}
+.dark ::selection {
+  @apply bg-gold-500/40 text-white;
 }
 
 /* Skrollbar (chiroyli) */
@@ -44,6 +61,12 @@ h1, h2, h3, h4 {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 /* CV preview uchun A4 o'lchami */

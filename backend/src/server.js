@@ -11,6 +11,7 @@ const companyRoutes = require("./routes/company.routes");
 const cvRoutes = require("./routes/cv.routes");
 const applicationRoutes = require("./routes/application.routes");
 const telegramRoutes = require("./routes/telegram.routes");
+const adminRoutes = require("./routes/admin.routes");
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/companies", companyRoutes);
 app.use("/api/cv", cvRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/telegram", telegramRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Salomatlik tekshiruvi (Render uchun)
 app.get("/health", (req, res) => res.json({ ok: true, service: "jobuz-api" }));
@@ -67,4 +69,10 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ JobUz API ishlayapti: http://localhost:${PORT}`);
+
+  // Lokal rejimda bot uchun long-polling (webhook faqat public URL'da ishlaydi)
+  if (process.env.TELEGRAM_POLLING === "true" && process.env.TELEGRAM_BOT_TOKEN) {
+    const { startPolling } = require("./telegram/polling");
+    startPolling();
+  }
 });

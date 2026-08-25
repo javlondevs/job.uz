@@ -76,7 +76,15 @@ async function me(req, res) {
   if (!user) return res.status(404).json({ message: "Foydalanuvchi topilmadi" });
 
   const { passwordHash, ...safe } = user;
-  res.json(safe);
+
+  // Rol o'zgargan bo'lishi mumkin (admin tomonidan) - yangi token beramiz
+  const token = jwt.sign(
+    { id: user.id, role: user.role, name: user.name },
+    process.env.JWT_SECRET || "jobuz-dev-secret",
+    { expiresIn: "7d" }
+  );
+
+  res.json({ ...safe, token });
 }
 
 module.exports = { register, login, me };

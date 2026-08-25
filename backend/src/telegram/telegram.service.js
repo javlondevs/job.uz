@@ -113,4 +113,215 @@ function verifyLoginWidget(authData) {
   return hmac === hash;
 }
 
-module.exports = { sendMessage, notifyNewJob, postJobToChannel, verifyLoginWidget, telegramEnabled };
+// 4) Bot update'larini qayta ishlash (webhook ham, polling ham shundan foydalanadi)
+async function handleUpdate(update) {
+  const msg = update.message;
+  if (!msg?.text) return;
+
+  const chatId = String(msg.chat.id);
+  const text = msg.text.trim();
+
+  if (text.startsWith("/start")) {
+    await sendMessage(chatId, [
+      `👋 Assalomu alaykum, <b>${msg.chat.first_name ?? ""}</b>!`,
+      ``,
+      `Bu <b>JobUz</b> boti — O'zbekiston ish qidirish platformasi.`,
+      ``,
+      `📌 <b>Buyruqlar:</b>`,
+      `/help — Yordam`,
+      `/search <b>Kasb nomi</b> — Vakansiyalarni qidirish`,
+      `/locations — Viloyatlar ro'yxati`,
+      `/sectors — Kasb sohalari ro'yxati`,
+      `/latest — So'nggi vakansiyalar`,
+      `/subscribe — Telegram bildirishnomani yoqish`,
+      `/myapps — Mening arizalarim`,
+      `/cabinet — Shaxsiy kabinet (saytga kirish)`,
+      ``,
+      `🔗 Sayt: ${process.env.FRONTEND_URL}`,
+    ].join("\n"));
+    return;
+  }
+
+  if (text.startsWith("/help")) {
+    await sendMessage(chatId, [
+      `📖 <b>JobUz boti — Yordam</b>`,
+      ``,
+      `🔍 /search <i>Dasturchi</i> — Kasb bo'yicha vakansiyalarni toping`,
+      `📍 /locations — O'zbekiston viloyatlari ro'yxati`,
+      `🏢 /sectors — Barcha kasb sohalari`,
+      `🆕 /latest — Oxirgi qo'shilgan vakansiyalar`,
+      `🔔 /subscribe — Yangi vakansiyalar haqida xabar oling`,
+      `📋 /myapps — Arizalaringiz holatini tekshiring`,
+      `🌐 /cabinet — Saytdagi shaxsiy kabinetga kiring`,
+      ``,
+      `Masalan: <code>/search Oshpaz Toshkent</code> — Toshkentdagi oshpazlik vakansiyalari`,
+    ].join("\n"));
+    return;
+  }
+
+  if (text.startsWith("/locations")) {
+    const regions = [
+      "Toshkent", "Toshkent viloyati", "Samarqand", "Buxoro",
+      "Farg'ona", "Andijon", "Namangan", "Qashqadaryo",
+      "Surxondaryo", "Jizzax", "Sirdaryo", "Navoiy",
+      "Xorazm", "Qoraqalpog'iston",
+    ];
+    await sendMessage(chatId, [
+      `📍 <b>Viloyatlar ro'yxati:</b>`,
+      ``,
+      ...regions.map((r, i) => `${i + 1}. ${r}`),
+      ``,
+      `Qidirish: <code>/search Kasb nomi Viloyat</code>`,
+    ].join("\n"));
+    return;
+  }
+
+  if (text.startsWith("/sectors")) {
+    const sectors = [
+      "IT va Dasturlash", "Moliya va Bank", "Ta'lim", "Tibbiyot",
+      "Marketing va Sotuv", "Ishlab chiqarish", "Qurilish",
+      "Transport va Logistika", "Xizmat ko'rsatish", "Huquq",
+      "Davlat boshqaruvi", "Oziq-ovqat sanoati", "Neft va Gaz",
+      "Energetika", "Agrar soha", "Mehmonxona va Restoran",
+      "Sug'urta", "Inson resurslari", "Arxitektura va Dizayn",
+      "Telekommunikatsiya", "Farmatsevtika", "Chakana savdo",
+      "Xavfsizlik", "Sport va Ommaviy hordiq",
+    ];
+    await sendMessage(chatId, [
+      `🏢 <b>Kasb sohalari ro'yxati:</b>`,
+      ``,
+      ...sectors.map((s) => `• ${s}`),
+      ``,
+      `Qidirish: <code>/search Kasb nomi</code>`,
+    ].join("\n"));
+    return;
+  }
+
+  if (text.startsWith("/latest")) {
+    try {
+      const jobs = await prisma.job.findMany({
+        where: { status: "OPEN" },
+        include: { company: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      });
+      if (jobs.length === 0) {
+        await sendMessage(chatId, "📭 Hozircha ochiq vakansiyalar yo'q.");
+        return;
+      }
+      const lines = [`🆕 <b>So'nggi vakansiyalar:</b>`, ``];
+      for (const j of jobs) {
+        lines.push(jobMessage(j));
+        lines.push(`🔗 <a href="${process.env.FRONTEND_URL}/jobs/${j.id}">Batafsil</a>`);
+        lines.push(`---`);
+      }
+      await sendMessage(chatId, lines.join("\n"));
+    } catch {
+      await sendMessage(chatId, "Xatolik yuz berdi.");
+    }
+    return;
+  }
+
+  if (text.startsWith("/cabinet")) {
+    await sendMessage(chatId, [
+      `🌐 <b>Shaxsiy kabinet</b>`,
+      ``,
+      `Saytda tizimga kirib, barcha imkoniyatlardan foydalaning:`,
+      `• Arizalar holatini kuzating`,
+      `• CV yarating`,
+      `• Vakansiyalar qo'shing (ish beruvchi)`,
+      ``,
+      `🔗 <a href="${process.env.FRONTEND_URL}/login">Kirish</a>`,
+      `🔗 <a href="${process.env.FRONTEND_URL}/register">Ro'yxatdan o'tish</a>`,
+    ].join("\n"));
+    return;
+  }
+
+  if (text.startsWith("/myapps")) {
+    const telegramId = String(msg.from?.id || chatId);
+    const user = await prisma.user.findUnique({ where: { telegramId } });
+    if (!user) {
+      await sendMessage(chatId, [
+        `⚠️ Siz hali tizimga kirgan emassiz.`,
+        ``,
+        `Saytga kirib, Telegram ID'ingizni bog'lang:`,
+        `🔗 <a href="${process.env.FRONTEND_URL}/dashboard">Dashboard</a>`,
+      ].join("\n"));
+      return;
+    }
+    const apps = await prisma.application.findMany({
+      where: { userId: user.id },
+      include: { job: { include: { company: { select: { name: true } } } } },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+    if (apps.length === 0) {
+      await sendMessage(chatId, "📭 Sizda hali arizalar yo'q.");
+      return;
+    }
+    const statusEmoji = { PENDING: "⏳", REVIEWED: "👀", ACCEPTED: "✅", REJECTED: "❌" };
+    const lines = [`📋 <b>Mening arizalarim (${apps.length} ta):</b>`, ``];
+    for (const a of apps) {
+      lines.push(`${statusEmoji[a.status] || "•"} <b>${a.job.title}</b> — ${a.job.company?.name || "?"}`);
+      lines.push(`   Holat: ${a.status}`);
+      lines.push(``);
+    }
+    await sendMessage(chatId, lines.join("\n"));
+    return;
+  }
+
+  if (text.startsWith("/subscribe")) {
+    await sendMessage(chatId, [
+      `🔔 <b>Telegram bildirishnomalar</b>`,
+      ``,
+      `Vakansiyalar haqida avtomatik xabar olish uchun:`,
+      `1. Saytga kiring: <a href="${process.env.FRONTEND_URL}/login">Kirish</a>`,
+      `2. Dashboard'da "Telegram bildirishnomalar" bo'limiga kiring`,
+      `3. Telegram ID'ingizni kiriting va obuna yarating`,
+      `4. Filtrlaringizni saqlang — mos vakansiyalar botga tushadi!`,
+    ].join("\n"));
+    return;
+  }
+
+  if (text.startsWith("/search")) {
+    const query = text.replace("/search", "").trim();
+    if (!query) {
+      await sendMessage(chatId, "Foydalanish: <code>/search Kasb nomi</code>\nMasalan: <code>/search Dasturchi</code>");
+      return;
+    }
+    try {
+      const jobs = await prisma.job.findMany({
+        where: {
+          status: "OPEN",
+          OR: [
+            { title: { contains: query, mode: "insensitive" } },
+            { description: { contains: query, mode: "insensitive" } },
+            { location: { contains: query, mode: "insensitive" } },
+          ],
+        },
+        include: { company: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      });
+      if (jobs.length === 0) {
+        await sendMessage(chatId, `❌ "<b>${query}</b>" bo'yicha hech narsa topilmadi.`);
+        return;
+      }
+      const lines = [`🔍 "<b>${query}</b>" bo'yicha ${jobs.length} ta natija:`, ``];
+      for (const j of jobs) {
+        lines.push(jobMessage(j));
+        lines.push(`🔗 <a href="${process.env.FRONTEND_URL}/jobs/${j.id}">Batafsil</a>`);
+        lines.push(`---`);
+      }
+      await sendMessage(chatId, lines.join("\n"));
+    } catch {
+      await sendMessage(chatId, "Xatolik yuz berdi.");
+    }
+    return;
+  }
+
+  // Noma'lum buyruq
+  await sendMessage(chatId, "❓ Buyruq topilmadi. /help yozib yordam oling.");
+}
+
+module.exports = { sendMessage, notifyNewJob, postJobToChannel, verifyLoginWidget, telegramEnabled, handleUpdate };

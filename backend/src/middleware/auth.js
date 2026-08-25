@@ -34,4 +34,13 @@ function requireEmployer(req, res, next) {
   next();
 }
 
-module.exports = { attachUser, requireAuth, requireEmployer, JWT_SECRET };
+// Faqat admin uchun
+function requireAdmin(req, res, next) {
+  if (!req.user) return res.status(401).json({ message: "Avval tizimga kiring" });
+  if (req.user.role !== "ADMIN") {
+    return res.status(403).json({ message: "Bu amal faqat admin uchun" });
+  }
+  next();
+}
+
+module.exports = { attachUser, requireAuth, requireEmployer, requireAdmin, JWT_SECRET };

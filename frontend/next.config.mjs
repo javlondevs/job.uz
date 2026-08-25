@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 const nextConfig = {
   reactStrictMode: true,
-  // API'ni to'g'ridan-to'g'ri env orqali chaqiramiz, shuning uchun rewrite kerak emas
+  async rewrites() {
+    return [
+      { source: "/uploads/:path*", destination: `${API}/uploads/:path*` },
+    ];
+  },
 };
 
 export default nextConfig;

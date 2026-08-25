@@ -1,34 +1,14 @@
 // Telegram controller - webhook va obuna
 const jwt = require("jsonwebtoken");
 const { prisma } = require("../config/db");
-const { verifyLoginWidget, sendMessage, telegramEnabled } = require("../telegram/telegram.service");
+const { verifyLoginWidget, handleUpdate, telegramEnabled } = require("../telegram/telegram.service");
 
 // POST /api/telegram/webhook - botdan kelgan update'lar
 async function webhook(req, res) {
-  const update = req.body || {};
   res.json({ ok: true }); // Telegram'ga darhol javob beramiz
 
   try {
-    const msg = update.message;
-    if (!msg?.text) return;
-
-    const chatId = String(msg.chat.id);
-    const text = msg.text.trim();
-
-    // /start komandasi - foydalanuvchini kutish
-    if (text.startsWith("/start")) {
-      await sendMessage(
-        chatId,
-        [
-          `👋 Assalomu alaykum, <b>${msg.chat.first_name ?? ""}</b>!`,
-          ``,
-          `Bu <b>JobUz</b> boti. Saytda o'z filtrlaringizni saqlab, Telegram bildirishnomasini yoqsaingiz,`,
-          `mos yangi vakansiyalar shu yerga tushadi.`,
-          ``,
-          `🔗 Sayt: ${process.env.FRONTEND_URL}`,
-        ].join("\n")
-      );
-    }
+    await handleUpdate(req.body || {});
   } catch (e) {
     console.error("Webhook xatosi:", e.message);
   }
