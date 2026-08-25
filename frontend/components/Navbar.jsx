@@ -19,8 +19,11 @@ export default function Navbar() {
 
   function handleLogout() {
     logout();
-    router.push("/");
+    setOpen(false);
+    // replace - "orqaga" bosganda dashboard'ga qaytib kelmasin
+    router.replace("/");
   }
+
 
   // Til menyusini tashqariga bosganda yopish
   useEffect(() => {

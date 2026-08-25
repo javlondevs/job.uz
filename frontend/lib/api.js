@@ -10,7 +10,10 @@ const baseURL = isServer
     "http://localhost:5000"
   : process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-const api = axios.create({ baseURL });
+const api = axios.create({
+  baseURL,
+  timeout: 30000, // osilgan so'rovlar 30s dan keyin uziladi
+});
 
 // Har bir so'rovga token qo'shamiz
 api.interceptors.request.use((config) => {

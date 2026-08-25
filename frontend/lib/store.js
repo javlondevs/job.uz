@@ -53,6 +53,10 @@ export function useT() {
   return (path, vars) => translate(lang, path, vars);
 }
 
+// /api/auth/me so'rovlarini ketma-ketligini kuzatamiz -
+// chiqish qilinganda kechikkan javoblar sessiyani "tiriltirmasligi" kerak
+let meSeq = 0;
+
 export const useAuth = create(
   persist(
     (set, get) => ({
@@ -61,25 +65,32 @@ export const useAuth = create(
 
       // Login/register muvaffaqiyatli bo'lganda
       setSession: ({ token, user }) => {
+        meSeq++; // eskirgan refreshMe javoblarini bekor qilamiz
         localStorage.setItem("jobuz_token", token);
         set({ token, user });
       },
 
       logout: () => {
+        meSeq++; // shu paytda uchib kelayotgan /me javobini bekor qiladi
         localStorage.removeItem("jobuz_token");
         set({ user: null, token: null });
       },
 
       // Sahifa yangilanganda profil yangilab turamiz
       refreshMe: async () => {
-        if (!get().token) return;
+        const seq = ++meSeq;
+        const tok = get().token;
+        if (!tok) return;
         try {
           const { data } = await api.get("/api/auth/me");
+          // Javob kelguncha login/logout bo'lgan bo'lsa - natijani tashlaymiz
+          if (seq !== meSeq || !get().token) return;
           // Backend rol o'zgarsa yangi token ham qaytaradi
           if (data.token) localStorage.setItem("jobuz_token", data.token);
-          set({ user: data, token: data.token || get().token });
+          set({ user: data.user || data, token: data.token || tok });
         } catch {
-          get().logout();
+          // Chiqish amal qilgan bo'lsa qayta logout qilib uyatsizlantirmaymiz
+          if (seq === meSeq && get().token) get().logout();
         }
       },
     }),
