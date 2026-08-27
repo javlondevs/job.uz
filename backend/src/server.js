@@ -51,6 +51,48 @@ app.use("/api/admin", adminRoutes);
 // Salomatlik tekshiruvi (Render uchun)
 app.get("/health", (req, res) => res.json({ ok: true, service: "jobuz-api" }));
 
+// Debug: bot xatolarini ko'rish uchun vaqtinchalik endpoint
+app.get("/debug/bot", async (req, res) => {
+  try {
+    const { telegramEnabled } = require("./telegram/telegram.service");
+    const { prisma } = require("./config/db");
+    const axios = require("axios");
+
+    const checks = {
+      telegramEnabled: telegramEnabled(),
+      botTokenSet: Boolean(process.env.TELEGRAM_BOT_TOKEN),
+      channelIdSet: Boolean(process.env.TELEGRAM_CHANNEL_ID),
+      channelIdValue: process.env.TELEGRAM_CHANNEL_ID || "NOT SET",
+      databaseConnected: false,
+      botSendMessageWorks: false,
+    };
+
+    // DB test
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      checks.databaseConnected = true;
+    } catch (e) {
+      checks.databaseError = e.message;
+    }
+
+    // Bot sendMessage test (o'ziga test)
+    if (telegramEnabled()) {
+      try {
+        const api = axios.create({ baseURL: `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}`, timeout: 10000 });
+        const r = await api.get("/getMe");
+        checks.botMe = r.data.result?.username;
+        checks.botSendMessageWorks = true;
+      } catch (e) {
+        checks.botError = e.response?.data || e.message;
+      }
+    }
+
+    res.json(checks);
+  } catch (e) {
+    res.status(500).json({ error: e.message, stack: e.stack });
+  }
+});
+
 // 404
 app.use((req, res) => res.status(404).json({ message: "Topilmadi" }));
 

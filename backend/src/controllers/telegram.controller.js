@@ -8,9 +8,14 @@ async function webhook(req, res) {
   res.json({ ok: true }); // Telegram'ga darhol javob beramiz
 
   try {
-    await handleUpdate(req.body || {});
+    const update = req.body || {};
+    const text = update.message?.text || update.callback_query?.data || "no-text";
+    const chatId = update.message?.chat?.id || update.callback_query?.message?.chat?.id || "?";
+    console.log(`[TG] update_id=${update.update_id} chat=${chatId} text=${text}`);
+    await handleUpdate(update);
+    console.log(`[TG] update ${update.update_id} processed OK`);
   } catch (e) {
-    console.error("Webhook xatosi:", e.message);
+    console.error("[TG] Webhook xatosi:", e.message, e.stack);
   }
 }
 
