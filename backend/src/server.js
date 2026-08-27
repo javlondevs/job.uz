@@ -51,28 +51,6 @@ app.use("/api/admin", adminRoutes);
 // Salomatlik tekshiruvi (Render uchun)
 app.get("/health", (req, res) => res.json({ ok: true, service: "jobuz-api" }));
 
-// Vaqtinchalik: barcha parollarni tiklash (bir marta ishlatiladi)
-app.post("/health/seed-passwords", async (req, res) => {
-  try {
-    const bcrypt = require("bcryptjs");
-    const { prisma } = require("./config/db");
-    const accounts = [
-      { email: "admin@jobuz.uz", password: "admin123", role: "ADMIN" },
-      { email: "employer@jobuz.uz", password: "employer123", role: "EMPLOYER" },
-      { email: "seeker@jobuz.uz", password: "seeker123", role: "JOB_SEEKER" },
-    ];
-    const results = [];
-    for (const a of accounts) {
-      const hash = await bcrypt.hash(a.password, 10);
-      const user = await prisma.user.update({ where: { email: a.email }, data: { passwordHash: hash } });
-      results.push(`${a.email} -> ${a.password} (role: ${user.role})`);
-    }
-    res.json({ ok: true, results });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
 // 404
 app.use((req, res) => res.status(404).json({ message: "Topilmadi" }));
 
