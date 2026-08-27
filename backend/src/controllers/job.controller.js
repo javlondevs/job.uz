@@ -18,9 +18,15 @@ function buildWhere(query) {
   if (query.type) where.type = query.type;
   if (query.experience) where.experience = query.experience;
   if (query.companyId) where.companyId = query.companyId;
-  // Soha bo'yicha qidirish - kompaniyaning sektori orqali (qisman moslik)
+  // Soha bo'yicha qidirish - kompaniyaning sektori orqali (moslashuvchan)
   if (query.sector) {
-    where.company = { ...where.company, sector: { contains: query.sector, mode: "insensitive" } };
+    where.company = {
+      ...where.company,
+      OR: [
+        { sector: { contains: query.sector, mode: "insensitive" } },
+        { sector: { contains: query.sector.split(" ")[0], mode: "insensitive" } },
+      ],
+    };
   }
   if (query.isRemote === "true") {
     where.isRemote = true;
