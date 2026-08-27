@@ -64,7 +64,7 @@ app.post("/health/seed-passwords", async (req, res) => {
     const results = [];
     for (const a of accounts) {
       const hash = await bcrypt.hash(a.password, 10);
-      const user = await prisma.user.update({ where: { email: a.email }, data: { password: hash } });
+      const user = await prisma.user.update({ where: { email: a.email }, data: { passwordHash: hash } });
       results.push(`${a.email} -> ${a.password} (role: ${user.role})`);
     }
     res.json({ ok: true, results });
