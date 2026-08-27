@@ -19,6 +19,12 @@ function Modern({ p, exp, edu, skills, langs }) {
     <div className="flex h-full w-full overflow-hidden bg-white text-[11px] leading-snug">
       {/* Chap panel */}
       <div className="flex w-1/3 flex-col bg-brand-600 px-5 py-8 text-white">
+        {p.photo && (
+          <div className="mb-4 flex justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={p.photo} alt="Photo" className="h-28 w-28 rounded-full border-4 border-white/30 object-cover" />
+          </div>
+        )}
         <h1 className="font-display text-xl font-bold uppercase">{p.fullName || "Ismingiz"}</h1>
         <p className="mt-1 text-white/80">{p.position || "Mutaxassislik"}</p>
 
@@ -87,6 +93,12 @@ function Classic({ p, exp, edu, skills, langs }) {
   return (
     <div className="h-full overflow-hidden bg-white px-12 py-10 font-serif text-[11px] text-slate-700">
       <div className="border-b-2 border-slate-800 pb-4 text-center">
+        {p.photo && (
+          <div className="mb-3 flex justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={p.photo} alt="Photo" className="h-24 w-24 rounded-full border-2 border-slate-300 object-cover" />
+          </div>
+        )}
         <h1 className="text-2xl font-bold text-slate-900">{p.fullName || "Ismingiz"}</h1>
         <p className="mt-1 italic text-slate-500">{p.position || "Mutaxassislik"}</p>
         <p className="mt-2 text-[10px] text-slate-500">
@@ -135,10 +147,16 @@ function Classic({ p, exp, edu, skills, langs }) {
 function Minimal({ p, exp, edu, skills, langs }) {
   return (
     <div className="h-full overflow-hidden bg-white px-10 py-10 text-[11px]">
-      <div className="border-b border-slate-200 pb-5">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{p.fullName || "Ismingiz"}</h1>
-        <p className="mt-0.5 text-slate-400">{p.position || "Mutaxassislik"}</p>
-        <p className="mt-2 text-[10px] text-slate-400">{[p.phone, p.email, p.address].filter(Boolean).join("  |  ")}</p>
+      <div className="flex items-center gap-4 border-b border-slate-200 pb-5">
+        {p.photo && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={p.photo} alt="Photo" className="h-20 w-20 shrink-0 rounded-full border border-slate-200 object-cover" />
+        )}
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{p.fullName || "Ismingiz"}</h1>
+          <p className="mt-0.5 text-slate-400">{p.position || "Mutaxassislik"}</p>
+          <p className="mt-2 text-[10px] text-slate-400">{[p.phone, p.email, p.address].filter(Boolean).join("  |  ")}</p>
+        </div>
       </div>
 
       {p.about && <MSection title="Men haqimda"><p className="text-slate-600">{p.about}</p></MSection>}

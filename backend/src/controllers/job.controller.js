@@ -18,9 +18,9 @@ function buildWhere(query) {
   if (query.type) where.type = query.type;
   if (query.experience) where.experience = query.experience;
   if (query.companyId) where.companyId = query.companyId;
-  // Soha bo'yicha qidirish - kompaniyaning sektori orqali
+  // Soha bo'yicha qidirish - kompaniyaning sektori orqali (qisman moslik)
   if (query.sector) {
-    where.company = { ...where.company, sector: { equals: query.sector } };
+    where.company = { ...where.company, sector: { contains: query.sector, mode: "insensitive" } };
   }
   if (query.isRemote === "true") {
     where.isRemote = true;

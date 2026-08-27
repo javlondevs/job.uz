@@ -1,8 +1,9 @@
 "use client";
 
 // Qidiruv sahifasi - filtrlar, saralash, sahifalash
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { SlidersHorizontal, Search, X } from "lucide-react";
 import api from "@/lib/api";
 import JobCard from "@/components/JobCard";
 import { REGIONS, SECTORS, JOB_TYPE_KEYS, EXPERIENCE_KEYS, regionLabel, sectorLabel } from "@/lib/constants";
@@ -23,7 +24,6 @@ function JobsContent() {
   const t = useT();
   const lang = usePrefs((s) => s.lang);
 
-  // Filtr holati URL'dan olinadi (link bilan bo'lishish mumkin)
   const [filters, setFilters] = useState({
     q: params.get("q") || "",
     location: params.get("location") || "",
@@ -38,9 +38,26 @@ function JobsContent() {
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ data: [], meta: null });
   const [loading, setLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(false); // mobil uchun
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Filtrlar o'zgarganda URL'ni yangilash + yuklash
+  const debounceRef = useRef(null);
+
+  const loadJobs = useCallback(async (f, p) => {
+    setLoading(true);
+    const sp = new URLSearchParams();
+    Object.entries(f).forEach(([k, v]) => {
+      if (v && v !== false) sp.set(k, v === true ? "true" : v);
+    });
+    sp.set("page", p);
+    try {
+      const { data } = await api.get(`/api/jobs?${sp.toString()}`);
+      setData(data);
+    } catch {
+      setData({ data: [], meta: null });
+    }
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
     const sp = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
@@ -48,25 +65,24 @@ function JobsContent() {
     });
     sp.set("page", page);
     router.replace(`/jobs?${sp.toString()}`);
-
-    const load = async () => {
-      setLoading(true);
-      try {
-        const { data } = await api.get(`/api/jobs?${sp.toString()}`);
-        setData(data);
-      } catch {
-        setData({ data: [], meta: null });
-      }
-      setLoading(false);
-    };
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, page]);
+    loadJobs(filters, page);
+  }, [filters, page, loadJobs, router]);
 
   const setF = (key, value) => {
-    setPage(1); // filtr o'zgarsa birinchi sahifaga
+    setPage(1);
     setFilters((f) => ({ ...f, [key]: value }));
   };
+
+  const setQ = (value) => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setF("q", value), 400);
+  };
+
+  const activeFilters = Object.entries(filters).filter(([k, v]) => {
+    if (k === "sort") return false;
+    if (k === "isRemote") return v === true;
+    return v !== "";
+  });
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -79,8 +95,17 @@ function JobsContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="btn-outline lg:hidden" onClick={() => setShowFilters(!showFilters)}>
-            ⚙️ {t("jobs.filters")}
+          <button
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:text-brand-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-gold-500 dark:hover:text-gold-400 lg:hidden"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <SlidersHorizontal size={16} />
+            {t("jobs.filters")}
+            {activeFilters.length > 0 && (
+              <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white dark:bg-gold-500 dark:text-navy-950">
+                {activeFilters.length}
+              </span>
+            )}
           </button>
           <select value={filters.sort} onChange={(e) => setF("sort", e.target.value)} className="input !w-auto">
             <option value="new">🆕 {t("jobs.sortNew")}</option>
@@ -88,6 +113,24 @@ function JobsContent() {
           </select>
         </div>
       </div>
+
+      {/* Faol filtrlar chiplari */}
+      {activeFilters.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {filters.q && <FilterChip label={`"${filters.q}"`} onRemove={() => { setFilters(f => ({ ...f, q: "" })); }} />}
+          {filters.location && <FilterChip label={regionLabel(filters.location, lang)} onRemove={() => setF("location", "")} />}
+          {filters.sector && <FilterChip label={sectorLabel(filters.sector, lang)} onRemove={() => setF("sector", "")} />}
+          {filters.type && <FilterChip label={t(`list.jobTypes.${filters.type}`)} onRemove={() => setF("type", "")} />}
+          {filters.experience && <FilterChip label={t(`list.exp.${filters.experience}`)} onRemove={() => setF("experience", "")} />}
+          {filters.isRemote && <FilterChip label={t("jobs.remoteWork")} onRemove={() => setF("isRemote", false)} />}
+          <button
+            onClick={() => setFilters({ q: "", location: "", sector: "", type: "", experience: "", salaryMin: "", salaryMax: "", isRemote: false, sort: filters.sort })}
+            className="text-xs font-semibold text-rose-500 hover:text-rose-700 dark:text-rose-400"
+          >
+            {t("common.clear")}
+          </button>
+        </div>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr]">
         {/* ===== FILTRLAR PANELI ===== */}
@@ -107,7 +150,15 @@ function JobsContent() {
 
             {/* Kalit so'z */}
             <Field label={t("jobs.keyword")}>
-              <input className="input" placeholder={t("jobs.keywordPh")} value={filters.q} onChange={(e) => setF("q", e.target.value)} />
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  className="input !pl-9"
+                  placeholder={t("jobs.keywordPh")}
+                  defaultValue={filters.q}
+                  onChange={(e) => setQ(e.target.value)}
+                />
+              </div>
             </Field>
 
             {/* Viloyat */}
@@ -204,12 +255,25 @@ function JobsContent() {
               ))}
             </div>
           ) : data.data.length === 0 ? (
-            <div className="card flex flex-col items-center gap-3 p-16 text-center">
-              <span className="text-5xl">🔍</span>
-              <h3 className="font-bold text-slate-900 dark:text-slate-100">{t("jobs.none")}</h3>
-              <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
-                {t("jobs.noneText")}
-              </p>
+            <div className="card flex flex-col items-center gap-4 p-16 text-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                <Search size={32} className="text-slate-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t("jobs.none")}</h3>
+                <p className="mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">
+                  {t("jobs.noneText")}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setFilters({ q: "", location: "", sector: "", type: "", experience: "", salaryMin: "", salaryMax: "", isRemote: false, sort: "new" });
+                  setPage(1);
+                }}
+                className="btn-outline !px-6"
+              >
+                {t("common.clear")}
+              </button>
             </div>
           ) : (
             <>
@@ -228,6 +292,17 @@ function JobsContent() {
         </div>
       </div>
     </div>
+  );
+}
+
+function FilterChip({ label, onRemove }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:bg-gold-500/15 dark:text-gold-300">
+      {label}
+      <button onClick={onRemove} className="rounded-full p-0.5 transition hover:bg-brand-200 dark:hover:bg-gold-500/30">
+        <X size={12} />
+      </button>
+    </span>
   );
 }
 

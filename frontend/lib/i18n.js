@@ -258,6 +258,8 @@ const uz = {
     degreePh: "Mutaxassislik / daraja",
     livePreview: "Jonli ko'rinish (A4)",
     defaultTitle: "Mening CV im",
+    photo: "7. Rasm / Avatar",
+    uploadPhoto: "Rasm yuklash",
   },
   list: {
     jobTypes: {
@@ -543,6 +545,8 @@ const ru = {
     degreePh: "Специальность / степень",
     livePreview: "Живой предпросмотр (A4)",
     defaultTitle: "Моё CV",
+    photo: "7. Фото / Аватар",
+    uploadPhoto: "Загрузить фото",
   },
   list: {
     jobTypes: {
@@ -828,6 +832,8 @@ const en = {
     degreePh: "Major / degree",
     livePreview: "Live preview (A4)",
     defaultTitle: "My CV",
+    photo: "7. Photo / Avatar",
+    uploadPhoto: "Upload photo",
   },
   list: {
     jobTypes: {

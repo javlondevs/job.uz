@@ -235,6 +235,41 @@ export default function CvBuilderPage() {
               onRemove={(i) => removeItem("languages", i)}
             />
           </div>
+
+          {/* Rasm / Avatar yuklash */}
+          <div className="card p-5">
+            <h2 className="mb-3 font-bold text-slate-900 dark:text-slate-100">{t("cv.photo")}</h2>
+            <div className="flex items-center gap-4">
+              {cv.personalInfo.photo ? (
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={cv.personalInfo.photo} alt="Avatar" className="h-24 w-24 rounded-2xl object-cover ring-2 ring-slate-200 dark:ring-slate-700" />
+                  <button
+                    onClick={() => setP("photo", "")}
+                    className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white text-xs shadow hover:bg-rose-600"
+                  >×</button>
+                </div>
+              ) : (
+                <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition hover:border-brand-400 hover:bg-brand-50 hover:text-brand-500 dark:border-slate-600 dark:bg-slate-800 dark:hover:border-gold-500 dark:hover:bg-gold-500/10">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) { setStatus("Rasm 5MB dan kichik bo'lishi kerak"); return; }
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setP("photo", ev.target.result);
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  <span className="mt-1 text-[10px] font-medium">{t("cv.uploadPhoto")}</span>
+                </label>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* ===== JONLI KO'RINISH ===== */}
